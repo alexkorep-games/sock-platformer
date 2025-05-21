@@ -4,8 +4,8 @@ import { GameScene } from "./GameScene";
 const gameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   parent: "phaser-game-container", // ID of the div
-  width: 800,
-  height: 600,
+  width: 800, // Initial canvas width, can be overridden by camera/world bounds
+  height: 600, // Initial canvas height
   physics: {
     default: "arcade",
     arcade: {
@@ -17,8 +17,6 @@ const gameConfig: Phaser.Types.Core.GameConfig = {
     },
   },
   scene: [GameScene],
-  // Ensure world bounds match game dimensions
-  // This is often handled by default, but explicit is good
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
@@ -30,4 +28,4 @@ const launchGame = (containerId: string): Phaser.Game => {
 };
 
 export default launchGame;
-export { gameConfig }; // Export config if you need to reference width/height elsewhere
+export { gameConfig };
