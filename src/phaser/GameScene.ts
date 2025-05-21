@@ -19,7 +19,7 @@ export class GameScene extends Phaser.Scene {
     this.load.image("star", "assets/star.png");
     // If you have a bomb asset:
     // this.load.image('bomb', 'assets/bomb.png');
-    this.load.spritesheet("dude", "assets/dude.png", {
+    this.load.spritesheet("sock", "assets/sock.png", {
       frameWidth: 32,
       frameHeight: 48,
     });
@@ -37,7 +37,7 @@ export class GameScene extends Phaser.Scene {
     this.platforms.create(750, 220, "ground");
 
     // Player
-    this.player = this.physics.add.sprite(100, 450, "dude");
+    this.player = this.physics.add.sprite(100, 450, "sock");
     this.player.setBounce(0.2);
     this.player.setCollideWorldBounds(true);
     // If world bounds are not set by game config, set them explicitly
@@ -46,18 +46,18 @@ export class GameScene extends Phaser.Scene {
     // Player Animations
     this.anims.create({
       key: "left",
-      frames: this.anims.generateFrameNumbers("dude", { start: 0, end: 3 }),
+      frames: this.anims.generateFrameNumbers("sock", { start: 0, end: 3 }),
       frameRate: 10,
       repeat: -1,
     });
     this.anims.create({
       key: "turn",
-      frames: [{ key: "dude", frame: 4 }],
+      frames: [{ key: "sock", frame: 4 }],
       frameRate: 20,
     });
     this.anims.create({
       key: "right",
-      frames: this.anims.generateFrameNumbers("dude", { start: 5, end: 8 }),
+      frames: this.anims.generateFrameNumbers("sock", { start: 5, end: 8 }),
       frameRate: 10,
       repeat: -1,
     });
