@@ -131,6 +131,5 @@ for (const targetDir of targetDirectories) {
     continue;
   }
 
-  console.log(`\n=== Scanning directory: ${targetDir} ===\n`);
   readAndPrintFilesRecursive(absoluteTargetPath);
 }
