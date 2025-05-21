@@ -4,13 +4,22 @@ import fs from "fs";
 import path from "path";
 import process from "process";
 
-const targetDirectory = "./src";
+// Array of directories to scan
+const targetDirectories = [
+  "./src",
+  "./public",
+];
+
+// Directories to exclude from scanning
 const excludedDirs = [
   // "src/features/credits",
   // "src/features/stats",
   // "src/features/title",
   // "src/features/undocking",
 ];
+
+// File extensions whose contents will be printed
+const allowedExtensions = [".ts", ".tsx", ".html", ".css", ".json", ".js", ".csv", ".ldtk"];
 
 /**
  * Checks if a given path should be excluded based on excludedDirs
@@ -25,8 +34,8 @@ function shouldExclude(currentPath) {
 }
 
 /**
- * Recursively reads directories, finds files, and prints their content.
- * Uses absolute paths for internal operations but prints paths relative to process.cwd().
+ * Recursively reads directories, finds files, and prints their content or skip notice.
+ * Uses absolute paths internally but prints paths relative to process.cwd().
  * @param {string} currentAbsolutePath The absolute path of the directory currently being scanned.
  */
 function readAndPrintFilesRecursive(currentAbsolutePath) {
@@ -35,7 +44,6 @@ function readAndPrintFilesRecursive(currentAbsolutePath) {
       return; // Skip excluded directories
     }
 
-    // Check if the path exists before trying to read it
     if (!fs.existsSync(currentAbsolutePath)) {
       const relativePath = path.relative(process.cwd(), currentAbsolutePath);
       console.warn(
@@ -46,7 +54,6 @@ function readAndPrintFilesRecursive(currentAbsolutePath) {
       return;
     }
 
-    // Get stats to ensure it's a directory before reading contents
     const dirStats = fs.statSync(currentAbsolutePath);
     if (!dirStats.isDirectory()) {
       const relativePath = path.relative(process.cwd(), currentAbsolutePath);
@@ -55,84 +62,75 @@ function readAndPrintFilesRecursive(currentAbsolutePath) {
           relativePath
         )}"`
       );
-      return; // Stop processing if it's not a directory
+      return;
     }
 
-    // Get a list of all entries (files and subdirectories) in the directory
     const entries = fs.readdirSync(currentAbsolutePath);
 
     entries.forEach((entry) => {
       const fullAbsolutePath = path.join(currentAbsolutePath, entry);
-      // Skip if this path should be excluded
       if (shouldExclude(fullAbsolutePath)) {
         return;
       }
-      // Calculate the relative path for display purposes *now*
+
       const relativePath = path.relative(process.cwd(), fullAbsolutePath);
-      const normalizedRelativePath = path.normalize(relativePath); // Ensure consistent separators
+      const normalizedRelativePath = path.normalize(relativePath);
 
       try {
-        // Get information (stats) about the current entry using its absolute path
         const stats = fs.statSync(fullAbsolutePath);
 
         if (stats.isFile()) {
           const ext = path.extname(fullAbsolutePath).toLowerCase();
-          const allowedExtensions = [".ts", ".tsx", ".html", ".css"];
           if (allowedExtensions.includes(ext)) {
             const content = fs.readFileSync(fullAbsolutePath, "utf8");
-
             console.log(`${normalizedRelativePath}:`);
             console.log("```");
             console.log(content);
             console.log("```");
-            console.log(""); // Add a blank line for separation
+            console.log("");
+          } else {
+            console.log(
+              `${normalizedRelativePath}: binary file\n`
+            );
           }
         } else if (stats.isDirectory()) {
-          // It's a directory - make the recursive call using the absolute path
           readAndPrintFilesRecursive(fullAbsolutePath);
         }
-        // Ignore other types like symbolic links, block devices etc. for this script
+        // Other types (links, devices, etc.) are ignored
       } catch (entryError) {
-        // Log errors accessing specific files/subdirs using the relative path
         console.error(
           `\nError processing entry "${normalizedRelativePath}": ${entryError.message}`
         );
-        // Continue with the next entry in the current directory
       }
     });
   } catch (dirReadError) {
-    // Log errors reading the directory itself using the relative path
     const relativeDirPath = path.relative(process.cwd(), currentAbsolutePath);
     console.error(
       `\nFailed to read directory "${path.normalize(relativeDirPath)}": ${
         dirReadError.message
       }`
     );
-
-    const initialAbsoluteTargetPath = path.resolve(targetDirectory);
-    if (currentAbsolutePath === initialAbsoluteTargetPath) {
-      console.error(`Cannot read the initial target directory. Exiting.`);
-      process.exit(1);
-    }
   }
 }
 
 // --- Main Execution ---
-const absoluteTargetPath = path.resolve(process.cwd(), targetDirectory); // Resolve target relative to CWD
+for (const targetDir of targetDirectories) {
+  const absoluteTargetPath = path.resolve(process.cwd(), targetDir);
 
-if (!fs.existsSync(absoluteTargetPath)) {
-  // Use the original targetDirectory string and the resolved absolute path in the error
-  console.error(
-    `Error: Starting directory "${targetDirectory}" (resolved to "${absoluteTargetPath}") not found.`
-  );
-  process.exit(1);
+  if (!fs.existsSync(absoluteTargetPath)) {
+    console.error(
+      `Error: Starting directory "${targetDir}" (resolved to "${absoluteTargetPath}") not found.`
+    );
+    continue;
+  }
+
+  if (!fs.statSync(absoluteTargetPath).isDirectory()) {
+    console.error(
+      `Error: Starting path "${targetDir}" (resolved to "${absoluteTargetPath}") is not a directory.`
+    );
+    continue;
+  }
+
+  console.log(`\n=== Scanning directory: ${targetDir} ===\n`);
+  readAndPrintFilesRecursive(absoluteTargetPath);
 }
-
-if (!fs.statSync(absoluteTargetPath).isDirectory()) {
-  console.error(
-    `Error: Starting path "${targetDirectory}" (resolved to "${absoluteTargetPath}") is not a directory.`
-  );
-  process.exit(1);
-}
-
-readAndPrintFilesRecursive(absoluteTargetPath);
